@@ -78,6 +78,8 @@
 
 <div class="center-column">
 
+	<a href="{% url 'logout' %}">Déconnexion</a>
+
     <div class="text-center mb-4">
         <a href="{% url 'add_series' 'netflix' %}" class="btn btn-primary btn-add">Ajouter 10 séries Netflix</a>
         <a href="{% url 'add_series' 'amazon' %}" class="btn btn-primary btn-add">Ajouter 10 séries Amazon Prime</a>
@@ -91,7 +93,7 @@
             {% if series.tmdb_id %}
             <img src="https://image.tmdb.org/t/p/w300{{ series.poster_path }}" alt="{{ series.title }}">
             {% else %}
-			<div style="height:450px; background-color:#ccc;"></div>
+            <img src="https://via.placeholder.com/300x450.png?text=No+Image" alt="No image">
             {% endif %}
 
             <div class="item-info">

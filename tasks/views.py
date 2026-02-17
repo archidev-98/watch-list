@@ -1,12 +1,17 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from .models import *
 from .forms import *
 import requests
+import secrets
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 # Create your views here.
+@login_required
 def index(request):
-	watchlist_items = WatchlistItem.objects.all()
+	watchlist_items = WatchlistItem.objects.filter(user=request.user)
 
 	return render(request, "tasks/list.html", {
         "watchlist_items": watchlist_items,  # c'est cette variable qui sera accessible dans le template
@@ -82,7 +87,8 @@ def add_series_to_watchlist(request, provider):
                     tmdb_id=series["id"],
                     title=series["name"],
                     provider=provider.capitalize(),
-					poster_path=series.get("poster_path")
+					poster_path=series.get("poster_path"),
+                    user=request.user
                 )
                 existing_ids = list(existing_ids) + [series["id"]]  # mettre à jour pour le prochain
                 new_series_added += 1
@@ -90,3 +96,102 @@ def add_series_to_watchlist(request, provider):
         page += 1  # passer à la page suivante si nécessaire
 
     return redirect("/")
+
+
+# Page d'inscription
+def signup_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # connexion automatique après inscription
+            return redirect('list')
+    else:
+        form = UserCreationForm()
+    return render(request, 'tasks/signup.html', {'form': form})
+
+# Page de login
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('list')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'tasks/login.html', {'form': form})
+
+# Déconnexion
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+from urllib.parse import urlencode
+# Rediriger vers France Connect
+def fc_login_redirect(request):
+    request.session.modified = True
+    
+    fc_authorize_url = "https://fcp.integ01.dev-franceconnect.fr/api/v1/authorize"
+    client_id = "211286433e39cce01db448d80181bdfd005554b19cd51b3fe7943f6b3b86ab6e"
+    redirect_uri = "http://localhost:8080/callback/"
+    eidas = "eidas1"
+    nonce = secrets.token_urlsafe(16)
+    state = secrets.token_urlsafe(16)
+
+    request.session['fc_nonce'] = nonce
+    request.session["fc_state"] = state
+
+    params = {
+		"response_type": "code",
+		"client_id": client_id,
+		"redirect_uri": redirect_uri,
+		"scope": "openid profile email",
+		"state": state,
+		"nonce": nonce,
+		"acr_values": eidas,
+	}
+    url = f"{fc_authorize_url}?{urlencode(params)}"
+    return redirect(url)
+
+
+# Callback après auth
+def fc_callback(request):
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+
+    if not code or not state:
+        return HttpResponseBadRequest("Missing code or state")
+
+    if state != request.session.get("fc_state"):
+        return HttpResponseBadRequest("Invalid state")
+
+    token_url = "https://fcp.integ01.dev-franceconnect.fr/api/v1/token"
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": "http://localhost:8080/callback/",
+        "client_id": "211286433e39cce01db448d80181bdfd005554b19cd51b3fe7943f6b3b86ab6e",
+        "client_secret": "2791a731e6a59f56b6b4dd0d08c9b1f593b5f3658b9fd731cb24248e2669af4b",
+    }
+    response = requests.post(token_url, data=data)
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+    
+    userinfo_url = "https://fcp.integ01.dev-franceconnect.fr/api/v1/userinfo"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    userinfo = requests.get(userinfo_url, headers=headers).json()
+
+    email = userinfo.get("email") or f"{userinfo['sub']}@franceconnect.local"
+
+    user, created = User.objects.get_or_create(
+        username=email,
+        defaults={
+            "email": email,
+            "first_name": userinfo.get("given_name", ""),
+            "last_name": userinfo.get("family_name", ""),
+        }
+    )
+
+    login(request, user)
+    return redirect("list")  # ta page watchlist

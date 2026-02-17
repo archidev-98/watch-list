@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Task(models.Model):
@@ -15,6 +16,7 @@ class WatchlistItem(models.Model):
     title = models.CharField(max_length=255)
     provider = models.CharField(max_length=50)
     poster_path = models.CharField(max_length=255, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
