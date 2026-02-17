@@ -1,73 +1,107 @@
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
 <style>
+    body{
+        background-color: #3a86ff;
+        font-family: 'Arial', sans-serif;
+    }
 
-	body{
-		background-color: #3a86ff;
-	}
+    .center-column{
+        width: 90%;
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 6px 2px 30px rgba(0,0,0,0.4);
+    }
 
-	input{
-		width: 100%;
-		padding: 12px 20px;
-		margin: 8px 0;
-		box-sizing: border-box;
-	}
+    h1{
+        text-align: center; 
+        color: #fb5607; 
+        font-size: 80px;
+        text-shadow: -5px 0 black, 0 5px black, 5px 0 black, 0 -5px black;
+    }
 
-	input::placeholder {
-	  color: #d3d3d3;
-	}
+    .btn-add{
+        margin-bottom: 20px;
+    }
 
-	.submit{
-		background-color: #6BA3E8;
-	}
+    .watchlist-grid{
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+    }
 
-	.center-column{
-		width:600px;
-		margin: 20px auto;
-		padding:20px;
-		background-color: #fff;
-		border-radius: 3px;
-		box-shadow: 6px 2px 30px 0px rgba(0,0,0,0.75);
-	}
+    .watchlist-item{
+        background-color: #8338ec;
+        border-radius: 8px;
+        color: #fff;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+    }
 
-	.item-row{
-		background-color: #8338ec;
-		margin: 10px;
-		padding: 20px;
-		border-radius: 3px;
-		color: #fff;
-		font-size: 16px;
-		box-shadow: 0px -1px 10px -4px rgba(0,0,0,0.75);
-	}
+    .watchlist-item:hover{
+        transform: scale(1.05);
+    }
 
-	.btn-danger{
-		background-color: #ffbe0b;
-		border-color: #e59400;
-	}
+    .watchlist-item img{
+        width: 100%;
+        display: block;
+    }
+
+    .item-info{
+        padding: 10px;
+    }
+
+    .item-info h5{
+        font-size: 16px;
+        margin: 5px 0;
+    }
+
+    .item-info p{
+        margin: 0;
+        font-size: 14px;
+        color: #ffd60a;
+    }
+
+    .btn-action{
+        margin: 5px 2px;
+        font-size: 12px;
+    }
 
 </style>
-<h1 style="text-align: center; color: #fb5607; font-size: 125px;        text-shadow: -10px 0 black, 0 10px black, 10px 0 black, 0 -10px black;
 
-"><b>TO DO LIST</b></h1>
-<div  class="center-column">
-	<form method="POST" action="/">
-		{% csrf_token %}
-		{{form.title}}
-		<input class="btn btn-info" type="submit" name="Create Task">
-	</form>
+<h1>TO WATCH LIST</h1>
 
-	<div class="todo-list">
-	{% for task in tasks %}
-		<div class="item-row">
-			<a class="btn btn-sm btn-info" href = "{% url 'update_task' task.id %}">Update</a>
-			<a class="btn btn-sm btn-danger" href = "{% url 'delete' task.id %}">Delete</a>
-			{% if task.complete == True %}
-			<strike>{{task}}</strike>
-			{% else %}
-			<span>{{task}}</span>
-			{% endif %}
+<div class="center-column">
 
-		</div>
-	{% endfor %}
-	</div>
+    <div class="text-center mb-4">
+        <a href="{% url 'add_series' 'netflix' %}" class="btn btn-primary btn-add">Ajouter 10 séries Netflix</a>
+        <a href="{% url 'add_series' 'amazon' %}" class="btn btn-primary btn-add">Ajouter 10 séries Amazon Prime</a>
+        <a href="{% url 'add_series' 'apple' %}" class="btn btn-primary btn-add">Ajouter 10 séries Apple TV</a>
+    </div>
+
+    <div class="watchlist-grid">
+        {% for series in watchlist_items %}
+        <div class="watchlist-item">
+            <!-- Affiche de la série -->
+            {% if series.tmdb_id %}
+            <img src="https://image.tmdb.org/t/p/w300{{ series.poster_path }}" alt="{{ series.title }}">
+            {% else %}
+			<div style="height:450px; background-color:#ccc;"></div>
+            {% endif %}
+
+            <div class="item-info">
+                <h5>{{ series.title }}</h5>
+                <p>{{ series.provider }}</p>
+                <a class="btn btn-sm btn-info btn-action" href="{% url 'update_task' series.id %}">Update</a>
+                <a class="btn btn-sm btn-danger btn-action" href="{% url 'delete' series.id %}">Delete</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
 </div>
