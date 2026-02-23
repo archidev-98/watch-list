@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseBadRequest
 from .models import *
 from .forms import *
@@ -32,18 +32,17 @@ def updateTask(request,pk):
 	context = {'form':form}
 	return render(request, 'tasks/update_task.html',context)
 
-def deleteTask(request,pk):
-	item = Task.objects.get(id=pk)
+def deleteTask(request, pk):
+    item = get_object_or_404(Task, id=pk)
 
-	if request.method == "POST":
-		item.delete()
-		return redirect('/')
+    if request.method == "POST":
+        item.delete()
+        return redirect("/")
 
-	context = {'item':item}
-	return render(request, 'tasks/delete.html', context)
+    context = {"item": item}
+    return render(request, "tasks/delete.html", context)
 
-
-TMDB_BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjMzk5N2VlYmRmMGVlOGJiYjkyYjQwMzQ5MjA5OGI3YyIsIm5iZiI6MTc3MTMxOTU3NC44OTIsInN1YiI6IjY5OTQzMTE2MDJlN2Y1NTZiYTI4ODI1ZiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.jdCF0UlFOgfM3jWpYbAVGtgZC1jl5h2mesFo_zpy_g4"
+TMDB_BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlZTQxMGZjMGIwZDgyMDVlZDMwZjk4ZmZiNWI4Yzg0OCIsIm5iZiI6MTc3MTMyMTY2Mi40NDUsInN1YiI6IjY5OTQzOTNlOGU1MTVlNmNkNDI4ODQwNSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.FK8vPIIDhfFS4Bp9zFaBWLjrsPBXNA8ykTq11F4Zbog"
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 
 # Mapping des providers
@@ -192,4 +191,4 @@ def fc_callback(request):
     )
 
     login(request, user)
-    return redirect("list")  # ta page watchlist
+    return redirect("list") 
