@@ -1,0 +1,3 @@
+[submodule "watch-list"]
+	path = watch-list
+	url = https://github.com/archidev-98/watch-list
